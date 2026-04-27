@@ -1,11 +1,47 @@
 import streamlit as st
 import plotly.graph_objects as go
+import librosa
+import numpy as np
+from audiorecorder import audiorecorder
+import tempfile
 
 st.set_page_config(page_title="NeuroSense 2.0", layout="wide")
 
-st.title("🧠 NeuroSense 2.0")
-st.subheader(" Multimodal Adaptive AI")
+# =========================
+# 🎨 UI
+# =========================
+st.markdown("""
+<style>
+body {background-color: #f4f7fb;}
+.block-container {padding: 2rem;}
+</style>
+""", unsafe_allow_html=True)
 
+st.title("🧠 NeuroSense 2.0")
+st.subheader("Multimodal adaptive AI")
+
+# =========================
+# 🎤 VOICE ANALYSIS FUNCTION
+# =========================
+def analyze_voice(audio_input):
+    try:
+        y, sr = librosa.load(audio_input, sr=None)
+
+        energy = np.mean(librosa.feature.rms(y=y))
+        tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+
+        if energy < 0.02:
+            return "Fatigued"
+        elif tempo < 80:
+            return "Slow"
+        else:
+            return "Normal"
+    except:
+        return "Not Available"
+
+# =========================
+# LAYOUT
+# =========================
 col1, col2 = st.columns([1,1.2])
 
 # =========================
@@ -23,7 +59,6 @@ with col1:
     avpu = st.selectbox("Consciousness", ["Alert", "Voice", "Pain", "Unresponsive"])
 
     context = st.selectbox("Context", ["Sepsis", "Cardiac", "Respiratory", "Anxiety"])
-
     behavior = st.selectbox("Behavior", ["Normal", "Confused", "Slow"])
 
     baseline = st.slider("Baseline HR", 60, 100, 80)
@@ -31,13 +66,36 @@ with col1:
     st.markdown("---")
     st.markdown("### 🎤 Voice Input")
 
-    audio = st.file_uploader("Upload voice sample", type=["wav", "mp3"])
-
     voice_status = "Not Available"
 
-    if audio:
-        st.audio(audio)
-        voice_status = st.selectbox("Voice Analysis Result", ["Normal", "Fatigued", "Slow"])
+    # 🎙️ تسجيل مباشر
+    st.markdown("#### 🎙️ Record Voice")
+    audio_rec = audiorecorder("Start Recording", "Stop Recording")
+
+    if len(audio_rec) > 0:
+        audio_bytes = audio_rec.export().read()
+        st.audio(audio_bytes)
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+
+        voice_status = analyze_voice(tmp_path)
+        st.success(f"Detected Voice: {voice_status}")
+
+    # 📁 رفع ملف
+    st.markdown("#### 📁 Or Upload Voice")
+    audio_file = st.file_uploader("Upload voice", type=["wav","mp3"])
+
+    if audio_file:
+        st.audio(audio_file)
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+            tmp.write(audio_file.read())
+            tmp_path = tmp.name
+
+        voice_status = analyze_voice(tmp_path)
+        st.success(f"Detected Voice: {voice_status}")
 
 # =========================
 # NEWS2
@@ -92,15 +150,15 @@ if context == "Sepsis":
     reasons.append("Sepsis context")
 elif context == "Anxiety":
     risk -= 10
-    reasons.append("Anxiety context (lower risk)")
+    reasons.append("Anxiety context")
 
 # Voice
 if voice_status == "Fatigued":
     risk += 10
-    reasons.append("Voice fatigue")
+    reasons.append("Voice fatigue detected")
 elif voice_status == "Slow":
     risk += 8
-    reasons.append("Slow speech")
+    reasons.append("Slow speech detected")
 
 # Behavior
 if behavior != "Normal":
@@ -153,7 +211,6 @@ with col2:
     st.write(f"💡 Recommendation: {rec}")
     st.write(f"📊 Confidence: {confidence}%")
 
-    # 🔥 Explainability
     st.markdown("### 🧾 Explanation")
     if reasons:
         for r in reasons:
@@ -174,5 +231,8 @@ with colA:
 with colB:
     st.success(f"Early Intervention: {max(risk-30,0)}%")
 
+# =========================
+# FOOTER
+# =========================
 st.markdown("---")
-st.markdown("*NeuroSense 2.0 — Explainable + Adaptive + Clinical AI*")
+st.markdown("*NeuroSense 2.0 — Live Voice + NEWS2 + Context-Aware AI*")
