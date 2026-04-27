@@ -8,7 +8,7 @@ import tempfile
 st.set_page_config(page_title="NeuroSense 2.0", layout="wide")
 
 st.title("🧠 NeuroSense 2.0")
-st.subheader("Multimodal adaptive AI")
+st.subheader("Research-Level: NEWS2 + Voice AI + Survival Analysis")
 
 # =========================
 # 🎤 Voice Analysis
@@ -195,4 +195,44 @@ with col2:
     if risk > 70:
         st.error("🔴 High Risk")
     elif risk > 40:
-        st.warnin
+        st.warning("🟠 Moderate Risk")
+    else:
+        st.success("🟢 Low Risk")
+
+    st.markdown("### 🧾 Explanation")
+    for r in reasons:
+        st.write(f"- {r}")
+
+    st.write(f"Hazard Score: {round(hazard,2)}")
+
+# =========================
+# 📊 Survival Curve
+# =========================
+st.markdown("### 📊 Survival Curve")
+
+fig2 = go.Figure()
+fig2.add_trace(go.Scatter(x=times, y=survival, mode='lines'))
+fig2.update_layout(
+    xaxis_title="Time (minutes)",
+    yaxis_title="Survival Probability"
+)
+st.plotly_chart(fig2, use_container_width=True)
+
+# =========================
+# 🔮 Digital Twin
+# =========================
+st.markdown("### 🔮 Digital Twin")
+
+colA, colB = st.columns(2)
+
+with colA:
+    st.error(f"No Intervention: {min(risk+20,100)}%")
+
+with colB:
+    st.success(f"Early Intervention: {max(risk-30,0)}%")
+
+# =========================
+# Footer
+# =========================
+st.markdown("---")
+st.markdown("*NeuroSense 2.0 — Research-Level Clinical AI*")
