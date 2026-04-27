@@ -8,7 +8,7 @@ import os
 
 st.set_page_config(page_title="NeuroSense 2.0", layout="wide")
 
-st.title("🧠 NeuroSense 2.0")
+st.title("🧠 NeuroSense AI")
 st.subheader("Predictive clinical intelligence platform")
 
 # =========================
