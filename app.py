@@ -1,122 +1,139 @@
 import streamlit as st
+import plotly.graph_objects as go
 
 # =========================
-# 🎨 PAGE CONFIG
+# PAGE CONFIG
 # =========================
 st.set_page_config(page_title="NeuroSense 2.0", layout="wide")
 
 # =========================
-# 🎨 CUSTOM CSS (Light UI)
+# 🎨 ADVANCED CSS
 # =========================
 st.markdown("""
 <style>
 body {
-    background-color: #f7f9fc;
+    background-color: #f4f7fb;
 }
+
 .block-container {
-    padding-top: 2rem;
+    padding: 2rem;
 }
+
 .card {
-    background-color: white;
+    background: white;
     padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.05);
-    margin-bottom: 15px;
-}
-.title {
-    font-size: 28px;
-    font-weight: bold;
-    color: #2c3e50;
-}
-.subtitle {
-    color: #7f8c8d;
+    border-radius: 18px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
     margin-bottom: 20px;
+}
+
+.title {
+    font-size: 34px;
+    font-weight: 700;
+    color: #1f2d3d;
+}
+
+.subtitle {
+    color: #6b7c93;
+    margin-bottom: 25px;
+}
+
+.small-card {
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+    text-align: center;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # =========================
-# 🟦 HEADER
+# HEADER
 # =========================
 st.markdown('<div class="title">🧠 NeuroSense 2.0</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Adaptive Clinical Intelligence Dashboard</div>', unsafe_allow_html=True)
 
 # =========================
-# 🧾 INPUT SECTION
+# LAYOUT
 # =========================
-col1, col2 = st.columns([1,1])
+left, right = st.columns([1,1.2])
 
-with col1:
+# =========================
+# INPUT CARD
+# =========================
+with left:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("📊 Patient Input")
 
-    hr = st.slider("Heart Rate (HR)", 50, 150, 85)
-    rr = st.slider("Respiratory Rate (RR)", 10, 40, 18)
-    bp = st.slider("Blood Pressure (BP)", 80, 180, 120)
+    hr = st.slider("Heart Rate", 50, 150, 85)
+    rr = st.slider("Respiratory Rate", 10, 40, 18)
+    bp = st.slider("Blood Pressure", 80, 180, 120)
 
-    voice = st.selectbox("🎤 Voice", ["Normal", "Fatigued", "Slow", "Not Available"])
-    behavior = st.selectbox("🧠 Behavior", ["Normal", "Confused", "Slow response"])
+    voice = st.selectbox("Voice", ["Normal", "Fatigued", "Slow", "Not Available"])
+    behavior = st.selectbox("Behavior", ["Normal", "Confused", "Slow response"])
+    context = st.selectbox("Context", ["Sepsis", "Chest Pain", "Anxiety"])
 
-    context = st.selectbox("📌 Clinical Context", ["Sepsis", "Chest Pain", "Anxiety"])
-    baseline = st.slider("👤 Baseline HR", 60, 100, 80)
+    baseline = st.slider("Baseline HR", 60, 100, 80)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================
-# 🧠 AI LOGIC
+# AI LOGIC
 # =========================
 risk = 0
 reasons = []
 
 if hr > 100:
-    risk += 25
-    reasons.append("High HR")
-
+    risk += 25; reasons.append("High HR")
 if rr > 22:
-    risk += 25
-    reasons.append("High RR")
-
+    risk += 25; reasons.append("High RR")
 if voice == "Fatigued":
-    risk += 20
-    reasons.append("Voice fatigue")
-
+    risk += 20; reasons.append("Voice fatigue")
 if voice == "Slow":
-    risk += 15
-    reasons.append("Slow speech")
-
+    risk += 15; reasons.append("Slow speech")
 if behavior != "Normal":
-    risk += 20
-    reasons.append("Behavior abnormal")
-
+    risk += 20; reasons.append("Abnormal behavior")
 if context == "Sepsis":
     risk += 15
 elif context == "Anxiety":
     risk -= 10
-
 if hr > baseline + 15:
-    risk += 10
-    reasons.append("Above baseline")
-
+    risk += 10; reasons.append("Above baseline")
 if voice == "Not Available":
-    risk += 5
-    reasons.append("Voice unavailable → relying on vitals")
+    reasons.append("Voice missing → relying on vitals")
 
 risk = max(min(risk, 100), 0)
-
 confidence = int(60 + risk * 0.3)
 
 # =========================
-# 📊 OUTPUT SECTION
+# OUTPUT UI
 # =========================
-with col2:
+with right:
     st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("📈 AI Output")
+    st.subheader("📈 AI Risk Score")
 
-    st.metric("Risk Score", f"{risk}%")
-    st.progress(risk)
+    # 🎯 Gauge Chart
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=risk,
+        title={'text': "Risk %"},
+        gauge={
+            'axis': {'range': [0, 100]},
+            'bar': {'color': "#4A90E2"},
+            'steps': [
+                {'range': [0, 40], 'color': "#d4edda"},
+                {'range': [40, 70], 'color': "#fff3cd"},
+                {'range': [70, 100], 'color': "#f8d7da"}
+            ],
+        }
+    ))
 
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Status
     if risk > 70:
-        st.error("🔴 HIGH RISK")
+        st.error("🔴 High Risk")
         rec = "Immediate intervention"
     elif risk > 40:
         st.warning("🟠 Moderate Risk")
@@ -125,66 +142,27 @@ with col2:
         st.success("🟢 Low Risk")
         rec = "Routine care"
 
-    st.write(f"💡 Recommendation: *{rec}*")
+    st.write(f"💡 *Recommendation:* {rec}")
+    st.write(f"📊 *Confidence:* {confidence}%")
 
-    # Time
-    if risk > 70:
-        time_est = "30–45 min"
-    elif risk > 40:
-        time_est = "1–2 hours"
-    else:
-        time_est = "Stable"
-
-    st.write(f"⏱️ Time to deterioration: {time_est}")
-    st.write(f"📊 Confidence: {confidence}%")
-
-    st.markdown("*🧾 Explanation:*")
+    st.markdown("*🧾 Explanation*")
     st.write(", ".join(reasons) if reasons else "No risk factors")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================
-# 📊 CHART
-# =========================
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.subheader("📊 Risk Breakdown")
-
-data = {
-    "HR": 25 if hr > 100 else 5,
-    "RR": 25 if rr > 22 else 5,
-    "Voice": 20 if voice not in ["Normal","Not Available"] else 5,
-    "Behavior": 20 if behavior != "Normal" else 5
-}
-
-st.bar_chart(data)
-st.markdown('</div>', unsafe_allow_html=True)
-
-# =========================
-# 🔮 DIGITAL TWIN
+# DIGITAL TWIN
 # =========================
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.subheader("🔮 Digital Twin Simulation")
 
-colA, colB = st.columns(2)
+col1, col2 = st.columns(2)
 
-with colA:
-    st.error(f"❌ No Intervention: {min(risk+20,100)}%")
+with col1:
+    st.metric("No Intervention", f"{min(risk+20,100)}%")
 
-with colB:
-    st.success(f"✅ Early Intervention: {max(risk-30,0)}%")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# =========================
-# 🎤 VOICE SECTION
-# =========================
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.subheader("🎤 Voice Input")
-
-audio = st.file_uploader("Upload voice sample", type=["wav","mp3"])
-if audio:
-    st.audio(audio)
-    st.info("Voice features extracted")
+with col2:
+    st.metric("Early Intervention", f"{max(risk-30,0)}%")
 
 st.markdown('</div>', unsafe_allow_html=True)
 
