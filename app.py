@@ -166,6 +166,8 @@ risk = max(min(risk, 100), 0)
 # ⏱️ Time
 ttd = predict_time(risk)
 
+confidence = int(60 + (risk * 0.3))  # ✅ FIX
+
 # =========================
 # OUTPUT
 # =========================
