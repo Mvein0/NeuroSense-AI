@@ -9,7 +9,7 @@ import os
 st.set_page_config(page_title="NeuroSense 2.0", layout="wide")
 
 st.title("🧠 NeuroSense 2.0")
-st.subheader("NEWS2 + Voice AI + Time Prediction")
+st.subheader("Predictive clinical intelligence platform")
 
 # =========================
 # 🎤 Voice Analysis (FIXED)
