@@ -72,3 +72,4 @@ to predict deterioration early.
 - Digital Twin  
 - About  
 """)
+
