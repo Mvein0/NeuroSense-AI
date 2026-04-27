@@ -186,10 +186,16 @@ with col2:
 
     if risk > 70:
         st.error("🔴 High Risk")
+        rec = "Immediate intervention"
     elif risk > 40:
         st.warning("🟠 Moderate Risk")
+        rec = "Close monitoring"
     else:
         st.success("🟢 Low Risk")
+        rec = "Routine care"
+
+    st.write(f"💡 Recommendation: {rec}")
+    st.write(f"📊 Confidence: {confidence}%")
 
     st.markdown("### 🧾 Explanation")
     if reasons:
