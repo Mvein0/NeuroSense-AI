@@ -4,18 +4,23 @@ import librosa
 import numpy as np
 from audiorecorder import audiorecorder
 import tempfile
+import os
 
 st.set_page_config(page_title="NeuroSense 2.0", layout="wide")
 
 st.title("🧠 NeuroSense 2.0")
-st.subheader("NEWS2 + Context-Aware + Voice AI + Time Prediction")
+st.subheader("NEWS2 + Voice AI + Time Prediction")
 
 # =========================
-# 🎤 Voice Analysis
+# 🎤 Voice Analysis (FIXED)
 # =========================
-def analyze_voice(audio_input):
+def analyze_voice(audio_path):
     try:
-        y, sr = librosa.load(audio_input, sr=None)
+        y, sr = librosa.load(audio_path, sr=None)
+
+        if len(y) < 1000:
+            return "Not Available"
+
         energy = np.mean(librosa.feature.rms(y=y))
         tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
 
@@ -25,11 +30,13 @@ def analyze_voice(audio_input):
             return "Slow"
         else:
             return "Normal"
-    except:
+
+    except Exception as e:
+        st.error(f"Voice analysis error: {e}")
         return "Not Available"
 
 # =========================
-# ⏱️ Time to Deterioration
+# ⏱️ Time Prediction
 # =========================
 def predict_time(risk):
     if risk >= 80:
@@ -50,7 +57,7 @@ with col1:
     st.markdown("### 📊 Patient Input")
 
     rr = st.slider("Respiratory Rate", 8, 40, 18)
-    spo2 = st.slider("SpO2", 70, 100, 98)
+    spo2 = st.slider("SpO₂", 70, 100, 98)
     temp = st.slider("Temperature", 34.0, 41.0, 37.0)
     sbp = st.slider("BP", 70, 200, 120)
     hr = st.slider("Heart Rate", 40, 150, 85)
@@ -65,28 +72,32 @@ with col1:
 
     voice_status = "Not Available"
 
-    # تسجيل مباشر
+    # 🎙️ تسجيل مباشر
     audio_rec = audiorecorder("Start Recording", "Stop Recording")
-
     if len(audio_rec) > 0:
         audio_bytes = audio_rec.export().read()
         st.audio(audio_bytes)
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             tmp.write(audio_bytes)
-            voice_status = analyze_voice(tmp.name)
+            tmp_path = tmp.name
 
+        voice_status = analyze_voice(tmp_path)
         st.success(f"Detected Voice: {voice_status}")
 
-    # رفع ملف
-    audio_file = st.file_uploader("Upload voice", type=["wav","mp3"])
+    # 📁 رفع ملف
+    audio_file = st.file_uploader("Upload voice", type=["wav","mp3","m4a"])
+
     if audio_file:
         st.audio(audio_file)
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+        # حفظ مؤقت
+        suffix = "." + audio_file.name.split(".")[-1]
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             tmp.write(audio_file.read())
-            voice_status = analyze_voice(tmp.name)
+            tmp_path = tmp.name
 
+        voice_status = analyze_voice(tmp_path)
         st.success(f"Detected Voice: {voice_status}")
 
 # =========================
@@ -138,6 +149,10 @@ if voice_status == "Fatigued":
     risk += 10
     reasons.append("Voice fatigue")
 
+elif voice_status == "Slow":
+    risk += 8
+    reasons.append("Slow speech")
+
 if behavior != "Normal":
     risk += 10
     reasons.append("Abnormal behavior")
@@ -148,7 +163,7 @@ if hr > baseline + 15:
 
 risk = max(min(risk, 100), 0)
 
-# ⏱️ Time Prediction
+# ⏱️ Time
 ttd = predict_time(risk)
 
 # =========================
@@ -177,8 +192,11 @@ with col2:
         st.success("🟢 Low Risk")
 
     st.markdown("### 🧾 Explanation")
-    for r in reasons:
-        st.write(f"- {r}")
+    if reasons:
+        for r in reasons:
+            st.write(f"- {r}")
+    else:
+        st.write("No major contributing factors")
 
 # =========================
 # Digital Twin
@@ -192,3 +210,9 @@ with colA:
 
 with colB:
     st.success(f"Early Intervention: {max(risk-30,0)}%")
+
+# =========================
+# Footer
+# =========================
+st.markdown("---")
+st.markdown("*NeuroSense 2.0 — Clean Final Version*")
