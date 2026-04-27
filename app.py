@@ -8,7 +8,7 @@ import tempfile
 st.set_page_config(page_title="NeuroSense 2.0", layout="wide")
 
 st.title("🧠 NeuroSense 2.0")
-st.subheader("Research-Level: NEWS2 + Voice AI + Survival Analysis")
+st.subheader("NEWS2 + Context-Aware + Voice AI + Time Prediction")
 
 # =========================
 # 🎤 Voice Analysis
@@ -29,38 +29,17 @@ def analyze_voice(audio_input):
         return "Not Available"
 
 # =========================
-# 🧠 Survival Model
+# ⏱️ Time to Deterioration
 # =========================
-def compute_hazard(hr, rr, spo2, temp, voice_status, context):
-    beta_hr = 0.02
-    beta_rr = 0.05
-    beta_spo2 = -0.04
-    beta_temp = 0.03
-
-    voice_factor = 0.2 if voice_status == "Fatigued" else 0
-    context_factor = 0.3 if context == "Sepsis" else 0
-
-    linear_pred = (
-        beta_hr * hr +
-        beta_rr * rr +
-        beta_spo2 * spo2 +
-        beta_temp * temp +
-        voice_factor +
-        context_factor
-    )
-
-    return np.exp(linear_pred)
-
-def survival_curve(hazard):
-    times = np.linspace(0, 120, 50)
-    survival = np.exp(-hazard * times / 100)
-    return times, survival
-
-def predict_ttd(times, survival):
-    for t, s in zip(times, survival):
-        if s < 0.5:
-            return int(t)
-    return ">120"
+def predict_time(risk):
+    if risk >= 80:
+        return "5–15 min"
+    elif risk >= 60:
+        return "15–30 min"
+    elif risk >= 40:
+        return "30–60 min"
+    else:
+        return "Stable"
 
 # =========================
 # Layout
@@ -71,7 +50,7 @@ with col1:
     st.markdown("### 📊 Patient Input")
 
     rr = st.slider("Respiratory Rate", 8, 40, 18)
-    spo2 = st.slider("SpO₂", 70, 100, 98)
+    spo2 = st.slider("SpO2", 70, 100, 98)
     temp = st.slider("Temperature", 34.0, 41.0, 37.0)
     sbp = st.slider("BP", 70, 200, 120)
     hr = st.slider("Heart Rate", 40, 150, 85)
@@ -88,6 +67,7 @@ with col1:
 
     # تسجيل مباشر
     audio_rec = audiorecorder("Start Recording", "Stop Recording")
+
     if len(audio_rec) > 0:
         audio_bytes = audio_rec.export().read()
         st.audio(audio_bytes)
@@ -168,12 +148,8 @@ if hr > baseline + 15:
 
 risk = max(min(risk, 100), 0)
 
-# =========================
-# 🧠 Survival Analysis
-# =========================
-hazard = compute_hazard(hr, rr, spo2, temp, voice_status, context)
-times, survival = survival_curve(hazard)
-ttd = predict_ttd(times, survival)
+# ⏱️ Time Prediction
+ttd = predict_time(risk)
 
 # =========================
 # OUTPUT
@@ -187,10 +163,11 @@ with col2:
         title={'text': "Risk %"},
         gauge={'axis': {'range': [0, 100]}}
     ))
+
     st.plotly_chart(fig, use_container_width=True)
 
     st.metric("NEWS2", news2)
-    st.metric("⏱️ Time to Deterioration", f"{ttd} min")
+    st.metric("⏱️ Time to Deterioration", ttd)
 
     if risk > 70:
         st.error("🔴 High Risk")
@@ -203,23 +180,8 @@ with col2:
     for r in reasons:
         st.write(f"- {r}")
 
-    st.write(f"Hazard Score: {round(hazard,2)}")
-
 # =========================
-# 📊 Survival Curve
-# =========================
-st.markdown("### 📊 Survival Curve")
-
-fig2 = go.Figure()
-fig2.add_trace(go.Scatter(x=times, y=survival, mode='lines'))
-fig2.update_layout(
-    xaxis_title="Time (minutes)",
-    yaxis_title="Survival Probability"
-)
-st.plotly_chart(fig2, use_container_width=True)
-
-# =========================
-# 🔮 Digital Twin
+# Digital Twin
 # =========================
 st.markdown("### 🔮 Digital Twin")
 
@@ -230,9 +192,3 @@ with colA:
 
 with colB:
     st.success(f"Early Intervention: {max(risk-30,0)}%")
-
-# =========================
-# Footer
-# =========================
-st.markdown("---")
-st.markdown("*NeuroSense 2.0 — Research-Level Clinical AI*")
