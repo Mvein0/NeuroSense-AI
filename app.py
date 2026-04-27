@@ -3,25 +3,8 @@ import plotly.graph_objects as go
 
 st.set_page_config(page_title="NeuroSense 2.0", layout="wide")
 
-# =========================
-# 🎨 UI STYLE
-# =========================
-st.markdown("""
-<style>
-body {background-color: #f4f7fb;}
-.block-container {padding: 2rem;}
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    margin-bottom: 20px;
-}
-</style>
-""", unsafe_allow_html=True)
-
 st.title("🧠 NeuroSense 2.0")
-st.subheader("NEWS2 + Context-Aware AI")
+st.subheader(" Multimodal Adaptive AI")
 
 col1, col2 = st.columns([1,1.2])
 
@@ -39,15 +22,25 @@ with col1:
 
     avpu = st.selectbox("Consciousness", ["Alert", "Voice", "Pain", "Unresponsive"])
 
-    voice = st.selectbox("Voice", ["Normal", "Fatigued", "Slow", "Not Available"])
-    behavior = st.selectbox("Behavior", ["Normal", "Confused", "Slow"])
-
     context = st.selectbox("Context", ["Sepsis", "Cardiac", "Respiratory", "Anxiety"])
+
+    behavior = st.selectbox("Behavior", ["Normal", "Confused", "Slow"])
 
     baseline = st.slider("Baseline HR", 60, 100, 80)
 
+    st.markdown("---")
+    st.markdown("### 🎤 Voice Input")
+
+    audio = st.file_uploader("Upload voice sample", type=["wav", "mp3"])
+
+    voice_status = "Not Available"
+
+    if audio:
+        st.audio(audio)
+        voice_status = st.selectbox("Voice Analysis Result", ["Normal", "Fatigued", "Slow"])
+
 # =========================
-# 🧮 NEWS2 CALCULATION
+# NEWS2
 # =========================
 news2 = 0
 
@@ -88,32 +81,38 @@ if avpu != "Alert":
     news2 += 3
 
 # =========================
-# 🔥 ENHANCED SCORE
+# ENHANCED SCORE
 # =========================
 risk = news2 * 10
+reasons = []
 
 # Context
 if context == "Sepsis":
     risk += 15
+    reasons.append("Sepsis context")
 elif context == "Anxiety":
     risk -= 10
+    reasons.append("Anxiety context (lower risk)")
 
 # Voice
-if voice == "Fatigued":
+if voice_status == "Fatigued":
     risk += 10
-elif voice == "Slow":
+    reasons.append("Voice fatigue")
+elif voice_status == "Slow":
     risk += 8
+    reasons.append("Slow speech")
 
 # Behavior
 if behavior != "Normal":
     risk += 10
+    reasons.append("Abnormal behavior")
 
 # Baseline
 if hr > baseline + 15:
     risk += 5
+    reasons.append("Above baseline HR")
 
 risk = max(min(risk, 100), 0)
-
 confidence = int(60 + risk * 0.3)
 
 # =========================
@@ -154,21 +153,26 @@ with col2:
     st.write(f"💡 Recommendation: {rec}")
     st.write(f"📊 Confidence: {confidence}%")
 
+    # 🔥 Explainability
+    st.markdown("### 🧾 Explanation")
+    if reasons:
+        for r in reasons:
+            st.write(f"- {r}")
+    else:
+        st.write("No major contributing factors")
+
 # =========================
-# 🔮 DIGITAL TWIN
+# DIGITAL TWIN
 # =========================
-st.markdown("### 🔮 Digital Twin Simulation")
+st.markdown("### 🔮 Digital Twin")
 
 colA, colB = st.columns(2)
 
 with colA:
-    st.error(f"❌ No Intervention: {min(risk+20,100)}%")
+    st.error(f"No Intervention: {min(risk+20,100)}%")
 
 with colB:
-    st.success(f"✅ Early Intervention: {max(risk-30,0)}%")
+    st.success(f"Early Intervention: {max(risk-30,0)}%")
 
-# =========================
-# FOOTER
-# =========================
 st.markdown("---")
-st.markdown("*NeuroSense 2.0 — NEWS2 Enhanced • Context-Aware • Adaptive AI*")
+st.markdown("*NeuroSense 2.0 — Explainable + Adaptive + Clinical AI*")
